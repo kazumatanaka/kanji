@@ -4,6 +4,7 @@
     --bg: #f0f4f8;
     --correct: #2ECC71;
     --wrong: #E74C3C;
+    --target-text: #E74C3C;
 }
 
 body {
@@ -11,14 +12,14 @@ body {
     margin: 0;
     padding: 0;
     background-color: var(--bg);
-    touch-action: manipulation; /* ダブルタップ拡大防止 */
+    touch-action: manipulation;
     user-select: none;
 }
 
 #app {
     max-width: 600px;
     margin: 0 auto;
-    height: 100vh;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
@@ -35,11 +36,18 @@ body {
     display: flex;
 }
 
-/* Menu */
+/* ターゲット文字（読み問題の対象） */
+.target-char {
+    color: var(--target-text);
+    border-bottom: 3px solid var(--target-text);
+    padding-bottom: 2px;
+}
+
+/* メニュー */
 h1 {
     text-align: center;
     color: #333;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .menu-buttons {
@@ -66,19 +74,11 @@ button:active {
     color: white;
 }
 
-.mistake-btn {
-    border-color: var(--accent);
-    color: var(--accent);
-}
+.mistake-btn { border-color: var(--accent); color: var(--accent); }
+.danger-btn { border-color: #999; color: #999; font-size: 0.9rem; margin-top: 20px; }
+.back-btn { border-color: #666; color: #666; }
 
-.danger-btn {
-    margin-top: 20px;
-    border-color: #999;
-    color: #999;
-    font-size: 0.9rem;
-}
-
-/* Game Screen */
+/* ゲーム画面 */
 header {
     display: flex;
     justify-content: space-between;
@@ -88,11 +88,15 @@ header {
 
 .question-area {
     background: white;
-    padding: 30px;
+    padding: 20px;
     border-radius: 15px;
     text-align: center;
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     margin-bottom: 20px;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
 }
 
 .question-type {
@@ -104,6 +108,7 @@ header {
 .question-text {
     font-size: 2rem;
     font-weight: bold;
+    line-height: 1.4;
 }
 
 /* Input Area */
@@ -112,7 +117,13 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
+}
+
+.hint {
+    font-size: 0.8rem;
+    color: #888;
+    margin-bottom: 5px;
 }
 
 /* Canvas */
@@ -123,86 +134,39 @@ header {
     touch-action: none;
     width: 300px;
     height: 300px;
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.05);
 }
 
 .canvas-controls {
-    margin-top: 10px;
+    margin-top: 15px;
     display: flex;
     gap: 10px;
     width: 100%;
     justify-content: center;
 }
 
-/* Action Button (Mic / Check) */
 .action-btn {
     background: var(--primary);
     color: white;
-    width: 100%;
-    padding: 20px;
-    font-size: 1.5rem;
+    flex: 2;
+    padding: 15px;
+    font-size: 1.2rem;
     border: none;
     box-shadow: 0 4px 0 #357ABD;
 }
+.action-btn:active { box-shadow: none; transform: translateY(4px); }
 
-.action-btn:active {
-    box-shadow: none;
-    transform: translateY(4px);
-}
+#mic-status, #api-status { margin-top: 10px; color: #666; font-size: 0.9rem; height: 20px;}
 
-#mic-status {
-    margin-bottom: 10px;
-    height: 20px;
-    color: #666;
-}
-
-/* Result Overlay */
+/* Overlay */
 .overlay {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0; width: 100%; height: 100%;
     background: rgba(255,255,255,0.95);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: flex; justify-content: center; align-items: center;
     z-index: 100;
 }
-
-.result-content {
-    text-align: center;
-    width: 80%;
-}
-
-#judge-mark {
-    font-size: 8rem;
-    margin-bottom: 20px;
-}
-
-.correct-answer {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 30px;
-}
-
-.judge-ok {
-    background: var(--correct);
-    color: white;
-    border: none;
-    margin-bottom: 10px;
-    width: 100%;
-}
-
-.judge-ng {
-    background: var(--wrong);
-    color: white;
-    border: none;
-    width: 100%;
-}
-
-#next-btn {
-    background: var(--primary);
-    color: white;
-    border: none;
-    width: 100%;
-}
+.result-content { text-align: center; width: 80%; }
+#judge-mark { font-size: 8rem; margin-bottom: 20px; }
+.correct-answer { font-size: 1.8rem; color: #333; margin-bottom: 20px; }
+#next-btn { background: var(--primary); color: white; border: none; width: 100%; }

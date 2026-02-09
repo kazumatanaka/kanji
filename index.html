@@ -9,34 +9,43 @@
 <body>
 
     <div id="app">
-        <div id="menu-screen" class="screen active">
+        <div id="menu-grade" class="screen active">
             <h1>中学受験<br>漢字マスター</h1>
             <div class="stats-box">
                 <p>総学習数: <span id="total-count">0</span></p>
                 <p>苦手ストック: <span id="mistake-count">0</span></p>
             </div>
-            
             <div class="menu-buttons">
-                <h3>学年・モード選択</h3>
-                <button onclick="startGame(4)">小4レベル</button>
-                <button onclick="startGame(5)">小5レベル</button>
-                <button onclick="startGame(6)">小6レベル</button>
+                <h3>学年を選んでね</h3>
+                <button onclick="selectGrade(4)">小4レベル</button>
+                <button onclick="selectGrade(5)">小5レベル</button>
+                <button onclick="selectGrade(6)">小6レベル</button>
                 <button onclick="startMistakeMode()" class="mistake-btn" id="mistake-btn">苦手克服モード</button>
                 <button onclick="resetData()" class="danger-btn">データ初期化</button>
             </div>
         </div>
 
+        <div id="menu-mode" class="screen">
+            <h1>モード選択</h1>
+            <div class="menu-buttons">
+                <h3>どっちを練習する？</h3>
+                <button onclick="startGame('read')">📖 読み (音声入力)</button>
+                <button onclick="startGame('write')">✍️ 書き (手書き判定)</button>
+                <button onclick="showMenuGrade()" class="back-btn">戻る</button>
+            </div>
+        </div>
+
         <div id="game-screen" class="screen">
             <header>
-                <button onclick="showMenu()">戻る</button>
+                <button onclick="showMenuGrade()">やめる</button>
                 <span id="grade-display"></span>
                 <span id="progress-display"></span>
             </header>
 
             <div class="question-area">
-                <div class="question-type" id="q-type">読み問題</div>
-                <div class="question-text" id="q-text">問題</div>
-                </div>
+                <div class="question-type" id="q-type"></div>
+                <div class="question-text" id="q-text"></div>
+            </div>
 
             <div id="reading-ui" class="input-area" style="display:none;">
                 <div class="mic-status" id="mic-status">マイクボタンを押して回答</div>
@@ -45,11 +54,13 @@
             </div>
 
             <div id="writing-ui" class="input-area" style="display:none;">
+                <p class="hint">枠いっぱいに大きく書いてね</p>
                 <canvas id="write-canvas"></canvas>
                 <div class="canvas-controls">
-                    <button onclick="clearCanvas()">消す</button>
+                    <button onclick="clearCanvas()">書き直す</button>
                     <button onclick="checkWriting()" class="action-btn">答え合わせ</button>
                 </div>
+                <div id="api-status"></div>
             </div>
 
             <div id="result-overlay" class="overlay" style="display:none;">
@@ -58,14 +69,8 @@
                     <div class="correct-answer">
                         正解: <span id="ans-text"></span>
                     </div>
-                    
-                    <div id="self-judge-btns" style="display:none;">
-                        <p>書けましたか？</p>
-                        <button onclick="processResult(true)" class="judge-ok">〇 正解</button>
-                        <button onclick="processResult(false)" class="judge-ng">✕ 不正解</button>
-                    </div>
-
-                    <button id="next-btn" onclick="nextQuestion()" style="display:none;">次へ</button>
+                    <div id="user-answer-display" style="color:#666; margin-bottom:10px;"></div>
+                    <button id="next-btn" onclick="nextQuestion()">次へ</button>
                 </div>
             </div>
         </div>
