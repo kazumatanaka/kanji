@@ -1,4 +1,4 @@
-let currentMode = '';
+let currentMode = ''; 
 let currentQuestion = null;
 let combo = 0;
 let strokes = [];
@@ -23,7 +23,7 @@ function playSound(isCorrect) {
     osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 }
 
-// --- 手書き描画 ---
+// --- 手書き描画ロジック ---
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.strokeStyle = '#1e293b';
@@ -53,13 +53,16 @@ function clearCanvas() {
     strokes = [];
 }
 
-// --- ゲーム制御 ---
+// --- アプリ制御 ---
 function startApp(mode) {
     currentMode = mode;
     document.getElementById('menu-screen').classList.add('hidden');
     document.getElementById('game-screen').classList.remove('hidden');
+    
+    // 表示の初期化
     document.getElementById('write-zone').classList.toggle('hidden', mode === 'read');
     document.getElementById('read-zone').classList.toggle('hidden', mode !== 'read');
+    
     nextQuestion();
 }
 
@@ -71,10 +74,20 @@ function nextQuestion() {
     document.getElementById('next-btn').classList.add('hidden');
     
     const grade = document.getElementById('grade-select').value;
-    let pool = questions.filter(q => grade === 'all' || q.grade == grade);
-    if (currentMode === 'review') pool = questions.filter(q => (history[q.id]?.p || 0) > 0);
     
-    if (pool.length === 0) { alert("問題がありません！"); backToMenu(); return; }
+    // モードと学年でフィルタリング
+    let pool = questions.filter(q => {
+        const gradeMatch = (grade === 'all' || q.grade == grade);
+        // 苦手克服モード以外は、練習中のモード(read/write)と一致するものだけを出す
+        const modeMatch = (currentMode === 'review') ? (history[q.id]?.p > 0) : (q.mode === currentMode);
+        return gradeMatch && modeMatch;
+    });
+    
+    if (pool.length === 0) {
+        alert("対象の問題が見つかりません。メニューに戻ります。");
+        backToMenu();
+        return;
+    }
     
     // 苦手問題の重み付け抽選
     let weighted = [];
@@ -85,7 +98,7 @@ function nextQuestion() {
     
     currentQuestion = weighted[Math.floor(Math.random() * weighted.length)];
     document.getElementById('hint-text').innerText = currentQuestion.hint;
-    document.getElementById('question-text').innerText = (currentMode === 'read') ? currentQuestion.kanji : "？";
+    document.getElementById('question-text').innerText = currentQuestion.kanji;
 }
 
 // --- 判定ロジック ---
@@ -103,19 +116,19 @@ async function checkHandwriting() {
         const data = await res.json();
         const candidates = data[1][0][1];
         processResult(candidates.includes(currentQuestion.answer));
-    } catch (e) { alert("判定エラー。ネットワークを確認してください"); }
+    } catch (e) { alert("判定エラー"); }
 }
 
 function startVoiceRecognition() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) { alert("音声認識非対応のブラウザです"); return; }
+    if (!SpeechRecognition) { alert("音声認識非対応ブラウザです"); return; }
     const rec = new SpeechRecognition();
     rec.lang = 'ja-JP';
     document.getElementById('mic-status').innerText = "🎙 聴いています...";
     rec.onresult = (e) => {
         const val = e.results[0][0].transcript;
         document.getElementById('mic-status').innerText = `「${val}」を判定中...`;
-        // 読みモード：音声認識が「漢字」になっても「ひらがな正解」と一致すればOK
+        // 音声認識結果が「漢字」になっても「正解」または「出題時の漢字」と一致すればOK
         processResult(val === currentQuestion.answer || val === currentQuestion.kanji);
     };
     rec.start();
