@@ -1,70 +1,208 @@
 :root {
-    --bg: #0f172a;
-    --card: #1e293b;
-    --primary: #38bdf8;
-    --accent: #f472b6;
-    --text: #f8fafc;
-    --correct: #22c55e;
-    --wrong: #ef4444;
+    --primary: #4A90E2;
+    --accent: #F5A623;
+    --bg: #f0f4f8;
+    --correct: #2ECC71;
+    --wrong: #E74C3C;
 }
 
 body {
-    margin: 0; padding: 0; font-family: 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', sans-serif;
-    background-color: var(--bg); color: var(--text);
-    touch-action: manipulation; overflow: hidden;
+    font-family: "Hiragino Kaku Gothic ProN", "Noto Sans JP", sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: var(--bg);
+    touch-action: manipulation; /* ダブルタップ拡大防止 */
+    user-select: none;
+}
+
+#app {
+    max-width: 600px;
+    margin: 0 auto;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
 }
 
 .screen {
-    display: flex; flex-direction: column; align-items: center;
-    justify-content: center; height: 100vh; width: 100vw;
+    display: none;
+    flex: 1;
+    flex-direction: column;
+    padding: 20px;
+    box-sizing: border-box;
 }
 
-.hidden { display: none !important; }
-
-.neon-text {
-    font-size: 2.2rem; color: var(--primary);
-    text-shadow: 0 0 10px var(--primary); margin-bottom: 1.5rem;
+.screen.active {
+    display: flex;
 }
 
-.menu-card {
-    background: var(--card); padding: 2rem; border-radius: 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.3); display: flex; flex-direction: column; gap: 1rem; width: 80%; max-width: 400px;
+/* Menu */
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 30px;
 }
 
-select, button {
-    padding: 14px; font-size: 1.1rem; border-radius: 12px; border: none; outline: none;
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
 }
 
-.btn-main { background: var(--primary); color: white; font-weight: bold; }
-.btn-sub { background: var(--accent); color: white; }
-.btn-back { background: transparent; color: var(--text); border: 1px solid var(--text); padding: 5px 15px; font-size: 0.9rem; }
-.btn-action { background: var(--correct); color: white; font-size: 1.3rem; font-weight: bold; flex-grow: 1; }
-.btn-util { background: #64748b; color: white; width: 80px; }
-.btn-next { background: var(--text); color: var(--bg); font-weight: bold; margin-top: 20px; width: 200px; z-index: 1000; }
-
-#status-bar {
-    position: absolute; top: 20px; width: 90%; display: flex; justify-content: space-between; align-items: center;
+button {
+    background: white;
+    border: 2px solid var(--primary);
+    color: var(--primary);
+    padding: 15px;
+    font-size: 1.2rem;
+    border-radius: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s;
 }
 
-#question-container { text-align: center; margin-bottom: 20px; padding: 0 20px; }
-#question-text { font-size: 4.5rem; font-weight: bold; margin: 10px 0; color: #fff; }
-#hint-text { color: var(--primary); font-size: 1.3rem; min-height: 1.5rem; }
-
-#canvas {
-    background: white; border-radius: 15px; border: 4px solid var(--primary);
-    touch-action: none; display: block; margin: 0 auto;
+button:active {
+    transform: scale(0.98);
+    background: var(--primary);
+    color: white;
 }
 
-.controls { display: flex; gap: 10px; width: 300px; margin-top: 15px; }
-
-.voice-indicator { margin-bottom: 20px; font-size: 1.2rem; color: var(--accent); }
-
-#feedback-overlay {
-    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-    font-size: 2.5rem; font-weight: bold; text-align: center; width: 90%; pointer-events: none;
+.mistake-btn {
+    border-color: var(--accent);
+    color: var(--accent);
 }
 
-.correct { color: var(--correct); text-shadow: 0 0 20px var(--correct); animation: pop 0.4s ease-out; }
-.wrong { color: var(--wrong); text-shadow: 0 0 20px var(--wrong); }
+.danger-btn {
+    margin-top: 20px;
+    border-color: #999;
+    color: #999;
+    font-size: 0.9rem;
+}
 
-@keyframes pop { 0% { scale: 0.5; opacity: 0; } 100% { scale: 1; opacity: 1; } }
+/* Game Screen */
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.question-area {
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.question-type {
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 10px;
+}
+
+.question-text {
+    font-size: 2rem;
+    font-weight: bold;
+}
+
+/* Input Area */
+.input-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Canvas */
+#write-canvas {
+    background: white;
+    border: 2px dashed #ccc;
+    border-radius: 10px;
+    touch-action: none;
+    width: 300px;
+    height: 300px;
+}
+
+.canvas-controls {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    justify-content: center;
+}
+
+/* Action Button (Mic / Check) */
+.action-btn {
+    background: var(--primary);
+    color: white;
+    width: 100%;
+    padding: 20px;
+    font-size: 1.5rem;
+    border: none;
+    box-shadow: 0 4px 0 #357ABD;
+}
+
+.action-btn:active {
+    box-shadow: none;
+    transform: translateY(4px);
+}
+
+#mic-status {
+    margin-bottom: 10px;
+    height: 20px;
+    color: #666;
+}
+
+/* Result Overlay */
+.overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255,255,255,0.95);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.result-content {
+    text-align: center;
+    width: 80%;
+}
+
+#judge-mark {
+    font-size: 8rem;
+    margin-bottom: 20px;
+}
+
+.correct-answer {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+.judge-ok {
+    background: var(--correct);
+    color: white;
+    border: none;
+    margin-bottom: 10px;
+    width: 100%;
+}
+
+.judge-ng {
+    background: var(--wrong);
+    color: white;
+    border: none;
+    width: 100%;
+}
+
+#next-btn {
+    background: var(--primary);
+    color: white;
+    border: none;
+    width: 100%;
+}

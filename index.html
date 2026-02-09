@@ -7,56 +7,71 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
     <div id="app">
-        <div id="menu-screen" class="screen">
-            <h1 class="neon-text">漢字マスター</h1>
-            <div class="menu-card">
-                <label>学年を選択</label>
-                <select id="grade-select">
-                    <option value="4">小学4年生</option>
-                    <option value="5">小学5年生</option>
-                    <option value="6">小学6年生</option>
-                    <option value="all" selected>中学受験 全範囲</option>
-                </select>
-                <button class="btn-main" onclick="startApp('read')">読みの練習 (音声)</button>
-                <button class="btn-main" onclick="startApp('write')">書きの練習 (手書き)</button>
-                <button class="btn-sub" id="review-btn" onclick="startApp('review')">苦手克服モード</button>
+        <div id="menu-screen" class="screen active">
+            <h1>中学受験<br>漢字マスター</h1>
+            <div class="stats-box">
+                <p>総学習数: <span id="total-count">0</span></p>
+                <p>苦手ストック: <span id="mistake-count">0</span></p>
+            </div>
+            
+            <div class="menu-buttons">
+                <h3>学年・モード選択</h3>
+                <button onclick="startGame(4)">小4レベル</button>
+                <button onclick="startGame(5)">小5レベル</button>
+                <button onclick="startGame(6)">小6レベル</button>
+                <button onclick="startMistakeMode()" class="mistake-btn" id="mistake-btn">苦手克服モード</button>
+                <button onclick="resetData()" class="danger-btn">データ初期化</button>
             </div>
         </div>
 
-        <div id="game-screen" class="screen hidden">
-            <div id="status-bar">
-                <div id="combo-display">0 COMBO</div>
-                <button class="btn-back" onclick="backToMenu()">戻る</button>
-            </div>
-            
-            <div id="question-container">
-                <div id="hint-text"></div>
-                <div id="question-text"></div>
+        <div id="game-screen" class="screen">
+            <header>
+                <button onclick="showMenu()">戻る</button>
+                <span id="grade-display"></span>
+                <span id="progress-display"></span>
+            </header>
+
+            <div class="question-area">
+                <div class="question-type" id="q-type">読み問題</div>
+                <div class="question-text" id="q-text">問題</div>
+                </div>
+
+            <div id="reading-ui" class="input-area" style="display:none;">
+                <div class="mic-status" id="mic-status">マイクボタンを押して回答</div>
+                <button id="mic-btn" class="action-btn">🎤 音声入力開始</button>
+                <div id="recognized-text"></div>
             </div>
 
-            <div id="input-area">
-                <div id="write-zone" class="hidden">
-                    <canvas id="canvas" width="300" height="300"></canvas>
-                    <div class="controls">
-                        <button class="btn-util" onclick="clearCanvas()">消去</button>
-                        <button class="btn-action" onclick="checkHandwriting()">判定！</button>
-                    </div>
-                </div>
-                <div id="read-zone" class="hidden">
-                    <div class="voice-indicator">
-                        <span id="mic-status">ボタンを押して回答</span>
-                    </div>
-                    <button class="btn-action" onclick="startVoiceRecognition()">🎙 答える</button>
+            <div id="writing-ui" class="input-area" style="display:none;">
+                <canvas id="write-canvas"></canvas>
+                <div class="canvas-controls">
+                    <button onclick="clearCanvas()">消す</button>
+                    <button onclick="checkWriting()" class="action-btn">答え合わせ</button>
                 </div>
             </div>
-            
-            <div id="feedback-overlay" class="hidden"></div>
-            <button id="next-btn" class="hidden btn-next" onclick="nextQuestion()">次へ進む</button>
+
+            <div id="result-overlay" class="overlay" style="display:none;">
+                <div class="result-content">
+                    <div id="judge-mark"></div>
+                    <div class="correct-answer">
+                        正解: <span id="ans-text"></span>
+                    </div>
+                    
+                    <div id="self-judge-btns" style="display:none;">
+                        <p>書けましたか？</p>
+                        <button onclick="processResult(true)" class="judge-ok">〇 正解</button>
+                        <button onclick="processResult(false)" class="judge-ng">✕ 不正解</button>
+                    </div>
+
+                    <button id="next-btn" onclick="nextQuestion()" style="display:none;">次へ</button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <script src="questions.js"></script>
-    <script src="script.js"></script>
+    <script src="data.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
