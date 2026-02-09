@@ -1,22 +1,189 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>中学受験・漢字チェック</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>漢字判定アプリ（修正版）</title>
     <style>
-        #canvas { border: 2px solid #333; background: #fff; touch-action: none; }
-        .controls { margin-top: 10px; }
-        #message { font-weight: bold; font-size: 1.2em; margin-top: 10px; color: blue; }
+        body { 
+            font-family: sans-serif; 
+            text-align: center; 
+            background-color: #f0f0f0; 
+            margin: 0; 
+            padding: 20px; 
+            overscroll-behavior: none; /* バウンス防止 */
+        }
+        h2 { margin: 10px 0; font-size: 1.5rem; }
+        p { margin: 5px 0 15px; color: #666; font-size: 0.9rem; }
+        
+        #canvas-container {
+            position: relative;
+            display: inline-block;
+            border: 4px solid #333;
+            border-radius: 12px;
+            background: #fff;
+            /* 影をつけて浮き上がらせる */
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        
+        canvas { 
+            display: block; 
+            cursor: crosshair; 
+            touch-action: none; /* 重要：ブラウザの標準タッチ操作を無効化 */
+        }
+
+        #message {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            min-height: 3em; /* メッセージエリアの高さを確保 */
+            color: #333;
+            background: #fff;
+            padding: 10px;
+            border-radius: 8px;
+        }
+
+        .buttons { margin-top: 15px; display: flex; justify-content: center; gap: 10px; }
+        button {
+            font-size: 1rem;
+            font-weight: bold;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .btn-reset { background-color: #ff5e57; color: white; }
+        .btn-judge { background-color: #0fb9b1; color: white; }
+        
     </style>
 </head>
 <body>
-    <h3>「天」を書いてみよう</h3>
-    <p>※二本の線の長さに気をつけて！</p>
-    <canvas id="canvas" width="300" height="300"></canvas>
-    <div class="controls">
-        <button onclick="clearCanvas()">書き直す</button>
-        <button onclick="judge()">採点する</button>
+
+    <h2>「天」の練習</h2>
+    <p>上の棒と下の棒、どっちが長い？</p>
+
+    <div id="canvas-container">
+        <canvas id="canvas" width="300" height="300"></canvas>
     </div>
-    <div id="message"></div>
+
+    <div class="buttons">
+        <button class="btn-reset" onclick="resetCanvas()">書き直す</button>
+        <button class="btn-judge" onclick="checkKanji()">判定！</button>
+    </div>
+
+    <div id="message">ここに結果が出ます</div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const msg = document.getElementById('message');
+        
+        // 描画設定
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round'; // 線の端を丸く
+        ctx.lineJoin = 'round'; // 角を丸く
+        ctx.strokeStyle = '#333';
+
+        let isDrawing = false;
+        let strokes = [];
+        let currentStroke = [];
+
+        // 座標取得関数（スマホ・PC両対応）
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            let clientX, clientY;
+            
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        // 描画開始
+        function start(e) {
+            e.preventDefault(); // スクロール防止
+            isDrawing = true;
+            currentStroke = [];
+            const pos = getPos(e);
+            ctx.beginPath();
+            ctx.moveTo(pos.x, pos.y);
+            currentStroke.push(pos);
+        }
+
+        // 描画中
+        function move(e) {
+            if (!isDrawing) return;
+            e.preventDefault(); // スクロール防止
+            const pos = getPos(e);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            currentStroke.push(pos);
+        }
+
+        // 描画終了
+        function end(e) {
+            if (!isDrawing) return;
+            isDrawing = false;
+            if (currentStroke.length > 0) {
+                strokes.push(currentStroke);
+            }
+        }
+
+        // イベントリスナー登録（ここが重要：passive: false）
+        canvas.addEventListener('mousedown', start);
+        canvas.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', end);
+
+        canvas.addEventListener('touchstart', start, { passive: false });
+        canvas.addEventListener('touchmove', move, { passive: false });
+        canvas.addEventListener('touchend', end);
+
+        // リセット処理
+        function resetCanvas() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            strokes = [];
+            msg.innerText = "まっさらにしました";
+            msg.style.color = "#333";
+        }
+
+        // 判定処理（天のロジック）
+        function checkKanji() {
+            if (strokes.length < 2) {
+                msg.innerText = "まだ2画かけてないよ！";
+                msg.style.color = "#e67e22";
+                return;
+            }
+
+            // ストロークの横幅を計算する関数
+            function getStrokeWidth(stroke) {
+                if (stroke.length === 0) return 0;
+                let minX = stroke[0].x;
+                let maxX = stroke[0].x;
+                for (let p of stroke) {
+                    if (p.x < minX) minX = p.x;
+                    if (p.x > maxX) maxX = p.x;
+                }
+                return maxX - minX;
+            }
+
+            // 1画目と2画目の幅を取得
+            const width1 = getStrokeWidth(strokes[0]); // 上の棒
+            const width2 = getStrokeWidth(strokes[1]); // 下の棒
+
+            // 判定基準：2画目が1画目の1.1倍以上あればOK
+            if (width2 > width1 * 1.1) {
+                msg.innerText = "すごい！正解！\n下が長くてバランスがいいね！";
+                msg.style.color = "#27ae60"; // 緑色
+            } else {
+                msg.innerText = "おしい！\n「天」は下の棒をもっと長く書こう！";
+                msg.style.color = "#c0392b"; // 赤色
+            }
+        }
+    </script>
 </body>
 </html>
