@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>中学受験・漢字チェック</title>
+    <style>
+        #canvas { border: 2px solid #333; background: #fff; touch-action: none; }
+        .controls { margin-top: 10px; }
+        #message { font-weight: bold; font-size: 1.2em; margin-top: 10px; color: blue; }
+    </style>
+</head>
+<body>
+    <h3>「天」を書いてみよう</h3>
+    <p>※二本の線の長さに気をつけて！</p>
+    <canvas id="canvas" width="300" height="300"></canvas>
+    <div class="controls">
+        <button onclick="clearCanvas()">書き直す</button>
+        <button onclick="judge()">採点する</button>
+    </div>
+    <div id="message"></div>
+</body>
+</html>
