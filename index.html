@@ -22,7 +22,6 @@
                 <button class="btn-main" onclick="startApp('write')">書きの練習 (手書き)</button>
                 <button class="btn-sub" id="review-btn" onclick="startApp('review')">苦手克服モード</button>
             </div>
-            <div id="stats"></div>
         </div>
 
         <div id="game-screen" class="screen hidden">
@@ -46,13 +45,14 @@
                 </div>
                 <div id="read-zone" class="hidden">
                     <div class="voice-indicator">
-                        <span id="mic-status">画面をタップして回答</span>
+                        <span id="mic-status">ボタンを押して回答</span>
                     </div>
-                    <button class="btn-action" onclick="startVoiceRecognition()">答える</button>
+                    <button class="btn-action" onclick="startVoiceRecognition()">🎙 答える</button>
                 </div>
             </div>
             
             <div id="feedback-overlay" class="hidden"></div>
+            <button id="next-btn" class="hidden btn-next" onclick="nextQuestion()">次へ進む</button>
         </div>
     </div>
 

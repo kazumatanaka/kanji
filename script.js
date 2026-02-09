@@ -13,12 +13,12 @@ function playSound(isCorrect) {
     osc.connect(g); g.connect(audioCtx.destination);
     if (isCorrect) {
         osc.frequency.setValueAtTime(523, audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.1);
         g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
     } else {
         osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(110, audioCtx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+        osc.frequency.setValueAtTime(146, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
     }
     osc.start(); osc.stop(audioCtx.currentTime + 0.5);
 }
@@ -26,7 +26,7 @@ function playSound(isCorrect) {
 // --- 手書き描画 ---
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
-ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.strokeStyle = '#000';
+ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.strokeStyle = '#1e293b';
 
 function getPos(e) {
     const rect = canvas.getBoundingClientRect();
@@ -35,6 +35,7 @@ function getPos(e) {
 }
 
 canvas.addEventListener('touchstart', e => {
+    e.preventDefault();
     const p = getPos(e);
     currentStroke = [[p.x], [p.y]];
     ctx.beginPath(); ctx.moveTo(p.x, p.y);
@@ -52,7 +53,7 @@ function clearCanvas() {
     strokes = [];
 }
 
-// --- アプリ制御 ---
+// --- ゲーム制御 ---
 function startApp(mode) {
     currentMode = mode;
     document.getElementById('menu-screen').classList.add('hidden');
@@ -62,54 +63,62 @@ function startApp(mode) {
     nextQuestion();
 }
 
-function backToMenu() {
-    location.reload();
-}
+function backToMenu() { location.reload(); }
 
 function nextQuestion() {
     clearCanvas();
-    const overlay = document.getElementById('feedback-overlay');
-    overlay.classList.add('hidden');
+    document.getElementById('feedback-overlay').classList.add('hidden');
+    document.getElementById('next-btn').classList.add('hidden');
     
-    // 苦手度による重み付け抽選
     const grade = document.getElementById('grade-select').value;
-    let pool = (currentMode === 'review') ? 
-        questions.filter(q => (history[q.id]?.p || 0) > 0) :
-        questions.filter(q => grade === 'all' || q.grade == grade);
+    let pool = questions.filter(q => grade === 'all' || q.grade == grade);
+    if (currentMode === 'review') pool = questions.filter(q => (history[q.id]?.p || 0) > 0);
     
     if (pool.length === 0) { alert("問題がありません！"); backToMenu(); return; }
     
-    currentQuestion = pool[Math.floor(Math.random() * pool.length)];
+    // 苦手問題の重み付け抽選
+    let weighted = [];
+    pool.forEach(q => {
+        let weight = (history[q.id]?.p || 0) + 1;
+        for(let i=0; i<weight; i++) weighted.push(q);
+    });
     
+    currentQuestion = weighted[Math.floor(Math.random() * weighted.length)];
     document.getElementById('hint-text').innerText = currentQuestion.hint;
-    document.getElementById('question-text').innerText = 
-        (currentMode === 'read') ? currentQuestion.kanji : "？";
+    document.getElementById('question-text').innerText = (currentMode === 'read') ? currentQuestion.kanji : "？";
 }
 
 // --- 判定ロジック ---
 async function checkHandwriting() {
-    const res = await fetch('https://www.google.com.tw/inputtools/request?ime=handwriting&app=mobilesearch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            options: "enable_pre_space",
-            requests: [{ writing_guide: { width: 300, height: 300 }, ink: strokes, language: "ja" }]
-        })
-    });
-    const data = await res.json();
-    const candidates = data[1][0][1];
-    processResult(candidates.includes(currentQuestion.answer));
+    if (strokes.length === 0) return;
+    try {
+        const res = await fetch('https://www.google.com.tw/inputtools/request?ime=handwriting&app=mobilesearch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                options: "enable_pre_space",
+                requests: [{ writing_guide: { width: 300, height: 300 }, ink: strokes, language: "ja" }]
+            })
+        });
+        const data = await res.json();
+        const candidates = data[1][0][1];
+        processResult(candidates.includes(currentQuestion.answer));
+    } catch (e) { alert("判定エラー。ネットワークを確認してください"); }
 }
 
 function startVoiceRecognition() {
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'ja-JP';
-    document.getElementById('mic-status').innerText = "聴いています...";
-    recognition.onresult = (e) => {
-        const answer = e.results[0][0].transcript;
-        processResult(answer === currentQuestion.answer);
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) { alert("音声認識非対応のブラウザです"); return; }
+    const rec = new SpeechRecognition();
+    rec.lang = 'ja-JP';
+    document.getElementById('mic-status').innerText = "🎙 聴いています...";
+    rec.onresult = (e) => {
+        const val = e.results[0][0].transcript;
+        document.getElementById('mic-status').innerText = `「${val}」を判定中...`;
+        // 読みモード：音声認識が「漢字」になっても「ひらがな正解」と一致すればOK
+        processResult(val === currentQuestion.answer || val === currentQuestion.kanji);
     };
-    recognition.start();
+    rec.start();
 }
 
 function processResult(isCorrect) {
@@ -126,10 +135,10 @@ function processResult(isCorrect) {
     } else {
         playSound(false);
         combo = 0;
-        overlay.innerText = `× 正解は ${currentQuestion.answer}`;
+        overlay.innerText = `正解は「${currentQuestion.answer}」`;
         overlay.className = "wrong";
         updateHistory(currentQuestion.id, false);
-        setTimeout(nextQuestion, 2500);
+        document.getElementById('next-btn').classList.remove('hidden');
     }
     document.getElementById('combo-display').innerText = `${combo} COMBO`;
 }
